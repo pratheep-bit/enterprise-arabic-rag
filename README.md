@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150x150/1a1a1a/ffffff?text=ARABIC+NLP" alt="Logo" width="120" height="120">
+  <img src="assets/logo.png" alt="Enterprise Arabic RAG Logo" width="150" height="150">
 
   <h1>Enterprise Arabic Document Q&A (RAG) System</h1>
 
