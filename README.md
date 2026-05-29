@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/logo.png" alt="Enterprise Arabic RAG Logo" width="150" height="150">
+  <img src="assets/logo.png" alt="Enterprise Arabic RAG Logo" width="250" height="250">
 
   <h1>Enterprise Arabic Document Q&A (RAG) System</h1>
 
