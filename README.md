@@ -320,4 +320,4 @@ All environment variables can be provided via `.env` or CI/CD secrets injected a
 | `API_AUTH_KEY` | `""` | Set a secure string to enable `X-API-Key` auth barrier |
 
 ---
-*Developed by the Core NLP Engineering Team. 2026.*
+*Developed by Pratheep (2026).*
