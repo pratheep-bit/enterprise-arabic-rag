@@ -18,21 +18,21 @@
 
 ---
 
-## 📑 Table of Contents
-1. [System Overview](#-system-overview)
-2. [Enterprise Hardening (70/70 Audit Score)](#-enterprise-hardening-7070-audit-score)
-3. [Arabic NLP Pipeline](#-arabic-nlp-pipeline)
-4. [System Architecture](#-system-architecture)
-5. [Getting Started (Local & Docker)](#-getting-started)
-6. [API Reference (OpenAPI)](#-api-reference)
-7. [Security & Compliance](#-security--compliance)
-8. [Observability & Monitoring](#-observability--monitoring)
-9. [Developer Guide](#-developer-guide)
-10. [Configuration Reference](#-configuration-reference)
+## Table of Contents
+1. [System Overview](#system-overview)
+2. [Enterprise Hardening (70/70 Audit Score)](#enterprise-hardening-7070-audit-score)
+3. [Arabic NLP Pipeline](#arabic-nlp-pipeline)
+4. [System Architecture](#system-architecture)
+5. [Getting Started (Local & Docker)](#getting-started)
+6. [API Reference (OpenAPI)](#api-reference)
+7. [Security & Compliance](#security--compliance)
+8. [Observability & Monitoring](#observability--monitoring)
+9. [Developer Guide](#developer-guide)
+10. [Configuration Reference](#configuration-reference)
 
 ---
 
-## 🌍 System Overview
+## System Overview
 
 Traditional RAG systems fail when applied to Arabic due to complex morphology, diacritics, Right-to-Left (RTL) text extraction issues, and the vast gap between Modern Standard Arabic (MSA) and regional dialects. 
 
@@ -44,7 +44,7 @@ This system solves these issues natively:
 
 ---
 
-## 🛡️ Enterprise Hardening (70/70 Audit Score)
+## Enterprise Hardening (70/70 Audit Score)
 
 This system underwent a rigorous Senior Engineering audit. The following enterprise patterns are fully implemented:
 
@@ -55,7 +55,7 @@ This system underwent a rigorous Senior Engineering audit. The following enterpr
 
 ---
 
-## 🧠 Arabic NLP Pipeline
+## Arabic NLP Pipeline
 
 The ingestion and retrieval pipelines implement a highly specialized sequence of mutations to maximize semantic density.
 
@@ -79,7 +79,7 @@ When a user asks `شلون اسجل في النظام؟` (Gulf) or `ازاي ا�
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ### Component Topology
 
@@ -135,7 +135,7 @@ flowchart TB
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 * Python 3.11+
@@ -174,7 +174,7 @@ streamlit run frontend/streamlit_app.py
 
 ---
 
-## 📡 API Reference
+## API Reference
 
 The API complies with OpenAPI 3.0. Interactive documentation is available at `/docs`.
 
@@ -245,7 +245,7 @@ curl -X POST http://localhost:8000/upload \
 
 ---
 
-## 🔒 Security & Compliance
+## Security & Compliance
 
 * **Input Sanitization**: Filenames are sanitized via `werkzeug.utils.secure_filename` logic to prevent Directory Traversal attacks (`../../etc/passwd`). Magic bytes (`%PDF`) are verified rather than relying on `.pdf` extensions.
 * **Authentication**: A global custom middleware enforces the presence and validation of `X-API-Key`.
@@ -254,7 +254,7 @@ curl -X POST http://localhost:8000/upload \
 
 ---
 
-## 📊 Observability & Monitoring
+## Observability & Monitoring
 
 ### Structured Logging
 All logs are emitted using `python-json-logger`. This makes ingestion into ELK/Datadog seamless.
@@ -278,7 +278,7 @@ A unique `X-Request-ID` UUIDv4 is generated for every inbound HTTP request. It i
 
 ---
 
-## 🛠️ Developer Guide
+## Developer Guide
 
 ### Running the Test Suite
 The project uses `pytest` and maintains 111 passing unit/integration tests with a target of 100% line coverage for domain logic.
@@ -300,7 +300,7 @@ To add a new regional dialect (e.g., Maghrebi):
 
 ---
 
-## ⚙️ Configuration Reference
+## Configuration Reference
 
 All environment variables can be provided via `.env` or CI/CD secrets injected at runtime.
 
