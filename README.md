@@ -9,8 +9,7 @@
 
   <!-- Badges -->
   <p>
-    <a href="https://github.com/your-org/arabic-rag/actions"><img src="https://img.shields.io/badge/build-passing-success?style=flat-square" alt="Build Status"></a>
-    <a href="https://codecov.io/gh/your-org/arabic-rag"><img src="https://img.shields.io/badge/coverage-100%25-success?style=flat-square" alt="Coverage"></a>
+
     <a href="https://python.org"><img src="https://img.shields.io/badge/python-3.11+-blue.svg?style=flat-square" alt="Python Version"></a>
     <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat-square" alt="FastAPI"></a>
     <a href="https://www.trychroma.com/"><img src="https://img.shields.io/badge/ChromaDB-0.5.20-ff69b4.svg?style=flat-square" alt="ChromaDB"></a>
