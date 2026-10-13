@@ -96,6 +96,43 @@ class TestLevantineDialect:
         assert "ماذا" in result
 
 
+class TestMaghrebiDialect:
+    """Maghrebi Arabic (Morocco, Algeria, Tunisia) term detection and normalization."""
+
+    def test_detects_wash(self):
+        assert mapper.has_dialect_terms("واش كاين حل")
+
+    def test_detects_shkun(self):
+        assert mapper.has_dialect_terms("شكون المسؤول")
+
+    def test_detects_bghit(self):
+        assert mapper.has_dialect_terms("بغيت نعرف التفاصيل")
+
+    def test_detects_dyal(self):
+        assert mapper.has_dialect_terms("التقرير ديال المشروع")
+
+    def test_detects_daba(self):
+        assert mapper.has_dialect_terms("دابا فين نمشي")
+
+    def test_detects_bezzaf(self):
+        assert mapper.has_dialect_terms("هذا الشي بزاف")
+
+    def test_normalizes_wash_and_kayen(self):
+        result = mapper.normalize_to_msa("واش كاين حل")
+        assert "هل" in result
+        assert "يوجد" in result
+
+    def test_normalizes_bghit_and_daba(self):
+        result = mapper.normalize_to_msa("بغيت التقرير دابا")
+        assert "أريد" in result
+        assert "الآن" in result
+
+    def test_expand_query_maghrebi(self):
+        variants = mapper.expand_query("واش كاين تقرير")
+        assert len(variants) == 2
+        assert "هل يوجد تقرير" in variants[1]
+
+
 class TestMSAPassthrough:
     """MSA text should pass through unchanged."""
 

@@ -1,8 +1,9 @@
 """
-dialect_mapper.py — Gulf Arabic Dialect Normalization
+dialect_mapper.py — Arabic Regional Dialect Normalization
 
-Maps Gulf Arabic dialect terms to Modern Standard Arabic (MSA) equivalents,
-providing query expansion for improved semantic retrieval.
+Maps Arabic regional dialect terms (Gulf, Egyptian, Levantine, Maghrebi)
+to Modern Standard Arabic (MSA) equivalents, providing query expansion for
+improved semantic retrieval.
 """
 
 import re
@@ -133,6 +134,40 @@ DIALECT_TO_MSA_MAP: dict[str, str] = {
     "كتير": "كثير",          # A lot (Levantine)
     "منيح": "جيد",           # Good (Levantine)
     "هيك": "هكذا",           # Like this (Levantine)
+
+    # ==========================================================
+    # Maghrebi Arabic (Morocco, Algeria, Tunisia)
+    # ==========================================================
+
+    # --- Question words ---
+    "واش": "هل",             # Question particle (Maghrebi)
+    "شكون": "من",            # Who (Maghrebi)
+    "علاش": "لماذا",         # Why (Maghrebi)
+    "كفاش": "كيف",           # How (Maghrebi)
+    "وقتاش": "متى",          # When (Maghrebi/Tunisian)
+    "شحال": "كم",            # How much/many (Maghrebi)
+
+    # --- Verbs & Existence ---
+    "بغيت": "أريد",          # I want (Maghrebi)
+    "بغينا": "نريد",         # We want (Maghrebi)
+    "بغى": "يريد",           # He wants (Maghrebi)
+    "كاين": "يوجد",          # Exists/is there (Maghrebi)
+    "ماكاينش": "لا يوجد",    # Does not exist (Maghrebi)
+
+    # --- Time ---
+    "دابا": "الآن",          # Now (Moroccan)
+    "توا": "الآن",           # Now (Tunisian)
+    "البارح": "أمس",         # Yesterday (Maghrebi)
+
+    # --- Prepositions & Adjectives/Adverbs ---
+    "ديال": "خاص بـ",        # Of / belonging to (Moroccan)
+    "بزاف": "كثيراً",        # A lot / very (Maghrebi)
+    "مزيان": "جيد",          # Good (Moroccan)
+    "زوين": "جميل",          # Nice / beautiful (Moroccan)
+    "باش": "لكي",            # In order to (Maghrebi)
+    "عفاك": "من فضلك",       # Please (Moroccan)
+    "واخا": "حسناً",         # Okay / alright (Moroccan)
+    "برشا": "كثيراً",        # A lot (Tunisian)
 }
 
 # Compile a regex pattern matching all dialect terms
