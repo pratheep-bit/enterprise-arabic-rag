@@ -100,3 +100,28 @@ class TestRetrieverTopK:
         result = retriever.retrieve("سؤال", top_k=3)
 
         assert len(result["chunks"]) <= 3
+
+
+class TestRetrieverThresholdFiltering:
+    """Threshold filtering tests."""
+
+    def test_filters_low_similarity_chunks(self):
+        results = [
+            {"content": "مستند ذو صلة عالية", "metadata": {"page": 1}, "similarity_score": 0.85},
+            {"content": "مستند ذو صلة منخفضة", "metadata": {"page": 2}, "similarity_score": 0.10},
+        ]
+        store = FakeVectorStore(results=results)
+        retriever = Retriever(vector_store=store, min_similarity_threshold=0.50)
+        res = retriever.retrieve("سؤال", top_k=5)
+        assert len(res["chunks"]) == 1
+        assert res["chunks"][0]["similarity_score"] == 0.85
+
+    def test_runtime_threshold_override(self):
+        results = [
+            {"content": "مستند متوسط الصلة", "metadata": {"page": 1}, "similarity_score": 0.40},
+        ]
+        store = FakeVectorStore(results=results)
+        retriever = Retriever(vector_store=store, min_similarity_threshold=0.50)
+        # Runtime override allows lower threshold
+        res = retriever.retrieve("سؤال", top_k=5, min_threshold=0.30)
+        assert len(res["chunks"]) == 1

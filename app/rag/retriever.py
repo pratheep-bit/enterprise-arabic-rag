@@ -5,6 +5,7 @@ Handles query normalization, dialect expansion, embedding,
 and semantic search against the ChromaDB vector store.
 """
 
+import os
 import logging
 from typing import Optional
 
@@ -14,6 +15,8 @@ from app.utils.dialect_mapper import DialectMapper
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MIN_THRESHOLD = float(os.getenv("MIN_SIMILARITY_THRESHOLD", "0.15"))
+
 
 class Retriever:
     """
@@ -21,16 +24,10 @@ class Retriever:
 
     Pipeline:
     1. Normalize Arabic text in the query
-    2. Detect and expand Gulf dialect terms
+    2. Detect and expand regional dialect terms
     3. Embed query variants
     4. Search ChromaDB for top-k chunks
-    5. Merge, deduplicate, and rank results
-
-    Features:
-    - Dialect-aware query expansion
-    - Multi-query retrieval for better recall
-    - Similarity score output
-    - Source attribution metadata
+    5. Merge, deduplicate, filter by similarity threshold, and rank results
     """
 
     def __init__(
@@ -38,6 +35,7 @@ class Retriever:
         vector_store: Optional[VectorStore] = None,
         dialect_mapper: Optional[DialectMapper] = None,
         arabic_processor: Optional[ArabicProcessor] = None,
+        min_similarity_threshold: float = DEFAULT_MIN_THRESHOLD,
     ):
         """
         Initialize the retriever.
@@ -46,16 +44,19 @@ class Retriever:
             vector_store: VectorStore instance (creates default if None).
             dialect_mapper: DialectMapper instance (creates default if None).
             arabic_processor: ArabicProcessor instance (creates default if None).
+            min_similarity_threshold: Minimum cosine/hybrid score for retrieved chunks.
         """
         self.vector_store = vector_store or VectorStore()
         self.dialect_mapper = dialect_mapper or DialectMapper()
         self.arabic_processor = arabic_processor or ArabicProcessor()
+        self.min_similarity_threshold = min_similarity_threshold
 
     def retrieve(
         self,
         query: str,
         top_k: int = 5,
         collection_name: Optional[str] = None,
+        min_threshold: Optional[float] = None,
     ) -> dict:
         """
         Retrieve relevant document chunks for an Arabic query.
@@ -112,13 +113,22 @@ class Retriever:
         # Step 4: Deduplicate by content hash and merge scores
         deduplicated = self._deduplicate_results(all_results)
 
-        # Step 5: Sort by similarity score (descending) and take top_k
-        deduplicated.sort(key=lambda x: x["similarity_score"], reverse=True)
-        top_results = deduplicated[:top_k]
+        # Step 5: Filter by minimum similarity threshold
+        effective_threshold = (
+            min_threshold if min_threshold is not None else self.min_similarity_threshold
+        )
+        filtered = [
+            chunk for chunk in deduplicated
+            if chunk.get("similarity_score", 0.0) >= effective_threshold
+        ]
+
+        # Step 6: Sort by similarity score (descending) and take top_k
+        filtered.sort(key=lambda x: x["similarity_score"], reverse=True)
+        top_results = filtered[:top_k]
 
         logger.info(
             f"Retrieved {len(top_results)} chunks "
-            f"(from {len(all_results)} total across {len(query_variants)} variants)"
+            f"(filtered from {len(all_results)} total across {len(query_variants)} variants, threshold={effective_threshold})"
         )
 
         # Determine the normalized query string for the response
