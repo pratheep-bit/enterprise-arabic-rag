@@ -278,3 +278,54 @@ class TextAnalysisResponse(BaseModel):
         default_factory=list,
         description="List of detected dialect terms with their MSA equivalents.",
     )
+
+
+class BatchQuestionItem(BaseModel):
+    """A single question item in a batch query."""
+
+    id: Optional[str] = Field(
+        default=None,
+        description="Optional client-provided correlation ID.",
+    )
+    question: str = Field(
+        ...,
+        min_length=2,
+        max_length=2000,
+        description="The question to ask in Arabic.",
+    )
+    top_k: int = Field(
+        default=5,
+        ge=1,
+        le=20,
+        description="Number of chunks to retrieve.",
+    )
+    document_id: Optional[str] = Field(
+        default=None,
+        max_length=64,
+        description="Optional document ID filter.",
+    )
+
+
+class BatchQuestionRequest(BaseModel):
+    """Request model for batch question answering."""
+
+    questions: list[BatchQuestionItem] = Field(
+        ...,
+        min_length=1,
+        max_length=20,
+        description="List of questions (maximum 20).",
+    )
+
+
+class BatchAnswerItem(BaseModel):
+    """An individual answer result in a batch response."""
+
+    id: Optional[str] = Field(default=None, description="Correlation ID matching the request.")
+    response: AnswerResponse = Field(..., description="The answer response.")
+
+
+class BatchAnswerResponse(BaseModel):
+    """Response model for batch question answering."""
+
+    total_processed: int = Field(..., description="Count of processed questions.")
+    answers: list[BatchAnswerItem] = Field(..., description="List of generated answers.")

@@ -34,6 +34,9 @@ from app.models.schemas import (
     TranslateResponse,
     TextAnalysisRequest,
     TextAnalysisResponse,
+    BatchQuestionRequest,
+    BatchAnswerResponse,
+    BatchAnswerItem,
 )
 from app.rag.chunker import ArabicChunker
 from app.rag.embeddings import get_model_name, _embedding_instance
@@ -318,6 +321,49 @@ async def ask_question(
                 "status_code": 500,
             },
         )
+
+
+# ============================================================
+# POST /ask/batch — Batch Question Answering
+# ============================================================
+
+@router.post(
+    "/ask/batch",
+    response_model=BatchAnswerResponse,
+    summary="Ask multiple questions in batch",
+    description="Ask multiple Arabic questions against uploaded documents in a single API call.",
+)
+@limiter.limit(os.getenv("RATE_LIMIT_ASK", "30/minute"))
+async def ask_questions_batch(
+    request: Request,
+    body: BatchQuestionRequest,
+    qa_chain: QAChain = Depends(get_qa_chain),
+    vector_store: VectorStore = Depends(get_vector_store),
+    registry: DocumentRegistry = Depends(get_document_registry),
+):
+    """Process multiple Arabic questions in batch."""
+    answers = []
+
+    for item in body.questions:
+        collection_name = None
+        if item.document_id:
+            doc_info = registry.get(item.document_id)
+            if doc_info:
+                collection_name = doc_info.get("collection_name")
+            elif vector_store.get_collection_info(item.document_id):
+                collection_name = item.document_id
+
+        ans = qa_chain.ask(
+            question=item.question,
+            top_k=item.top_k,
+            collection_name=collection_name,
+        )
+        answers.append(BatchAnswerItem(id=item.id, response=ans))
+
+    return BatchAnswerResponse(
+        total_processed=len(answers),
+        answers=answers,
+    )
 
 
 # ============================================================
