@@ -247,3 +247,34 @@ class TranslateRequest(BaseModel):
 class TranslateResponse(BaseModel):
     """Response model for a translation request."""
     translation: str = Field(..., description="English translation.")
+
+
+class TextAnalysisRequest(BaseModel):
+    """Request model for analyzing Arabic text."""
+
+    text: str = Field(
+        ...,
+        min_length=1,
+        max_length=20000,
+        description="Arabic text to analyze.",
+    )
+
+
+class TextAnalysisResponse(BaseModel):
+    """Response model for Arabic text analysis."""
+
+    total_chars: int = Field(..., description="Total character count.")
+    arabic_chars: int = Field(..., description="Total Arabic character count.")
+    arabic_ratio: float = Field(..., description="Ratio of Arabic characters.")
+    word_count: int = Field(..., description="Total Arabic words.")
+    unique_words: int = Field(..., description="Unique Arabic words.")
+    lexical_diversity: float = Field(..., description="Type-token ratio.")
+    tatweel_count: int = Field(..., description="Tatweel elongation count.")
+    diacritic_count: int = Field(..., description="Tashkeel diacritic count.")
+    diacritic_ratio: float = Field(..., description="Diacritics per Arabic char.")
+    sentence_count: int = Field(..., description="Estimated sentence count.")
+    is_primarily_arabic: bool = Field(..., description="True if text is primarily Arabic.")
+    detected_dialects: list[dict[str, str]] = Field(
+        default_factory=list,
+        description="List of detected dialect terms with their MSA equivalents.",
+    )

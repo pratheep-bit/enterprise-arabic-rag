@@ -32,6 +32,8 @@ from app.models.schemas import (
     UploadResponse,
     TranslateRequest,
     TranslateResponse,
+    TextAnalysisRequest,
+    TextAnalysisResponse,
 )
 from app.rag.chunker import ArabicChunker
 from app.rag.embeddings import get_model_name, _embedding_instance
@@ -39,6 +41,8 @@ from app.rag.qa_chain import QAChain, QAChainError
 from app.rag.vector_store import VectorStore
 from app.services.document_registry import DocumentRegistry
 from app.services.pdf_extractor import PDFExtractor, PDFExtractionError
+from app.utils.arabic_processor import analyze_arabic_text
+from app.utils.dialect_mapper import DialectMapper
 from app.utils.file_utils import (
     FileValidationError,
     save_upload,
@@ -516,6 +520,51 @@ async def translate_text(
             detail={
                 "error": "TRANSLATION_ERROR",
                 "detail": "Translation failed.",
+                "status_code": 500,
+            },
+        )
+
+
+# ============================================================
+# POST /analyze — Analyze Arabic text
+# ============================================================
+
+_dialect_mapper = DialectMapper()
+
+
+@router.post(
+    "/analyze",
+    response_model=TextAnalysisResponse,
+    summary="Analyze Arabic text structure and dialects",
+    description="Calculates detailed statistical, linguistic, and dialectal metrics for Arabic text.",
+)
+async def analyze_arabic_content(body: TextAnalysisRequest):
+    """Analyze Arabic text metrics and extract detected dialect colloquialisms."""
+    try:
+        metrics = analyze_arabic_text(body.text)
+        detected_dialects = _dialect_mapper.get_dialect_terms_found(body.text)
+
+        return TextAnalysisResponse(
+            total_chars=metrics["total_chars"],
+            arabic_chars=metrics["arabic_chars"],
+            arabic_ratio=metrics["arabic_ratio"],
+            word_count=metrics["word_count"],
+            unique_words=metrics["unique_words"],
+            lexical_diversity=metrics["lexical_diversity"],
+            tatweel_count=metrics["tatweel_count"],
+            diacritic_count=metrics["diacritic_count"],
+            diacritic_ratio=metrics["diacritic_ratio"],
+            sentence_count=metrics["sentence_count"],
+            is_primarily_arabic=metrics["is_primarily_arabic"],
+            detected_dialects=detected_dialects,
+        )
+    except Exception as e:
+        logger.error(f"Text analysis error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "ANALYSIS_ERROR",
+                "detail": "حدث خطأ أثناء تحليل النص العربي.",
                 "status_code": 500,
             },
         )
