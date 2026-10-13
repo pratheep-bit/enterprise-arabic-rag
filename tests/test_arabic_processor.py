@@ -135,3 +135,32 @@ class TestIsArabic:
 
     def test_mixed_majority_arabic(self):
         assert processor.is_arabic("مرحبا بالعالم Hello")
+
+
+class TestArabicTextAnalysis:
+    """Test text statistics and linguistic analytics."""
+
+    def test_empty_text_analysis(self):
+        stats = processor.analyze_text("")
+        assert stats["total_chars"] == 0
+        assert stats["word_count"] == 0
+        assert stats["is_primarily_arabic"] is False
+
+    def test_arabic_metrics(self):
+        text = "هَذَا مَشْرُوعٌ كَبِيرٌ. وَهَذَا مَشْرُوعٌ آخَرُ!"
+        stats = processor.analyze_text(text)
+        assert stats["word_count"] > 0
+        assert stats["sentence_count"] >= 2
+        assert stats["diacritic_count"] > 0
+        assert stats["is_primarily_arabic"] is True
+        assert 0.0 < stats["lexical_diversity"] <= 1.0
+
+    def test_tatweel_detection(self):
+        text = "مـــرحـــبـــا"
+        stats = processor.analyze_text(text)
+        assert stats["tatweel_count"] >= 3
+
+    def test_extract_arabic_words(self):
+        text = "مرحبا بكم 123 in the system!"
+        words = processor.extract_arabic_words(text)
+        assert words == ["مرحبا", "بكم"]

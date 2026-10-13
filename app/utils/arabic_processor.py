@@ -217,6 +217,100 @@ class ArabicProcessor:
             return "rtl"
         return "ltr"
 
+    @staticmethod
+    def extract_arabic_words(text: Optional[str]) -> list[str]:
+        """
+        Extract clean Arabic word tokens from text, removing punctuation and symbols.
+
+        Args:
+            text: Input string.
+
+        Returns:
+            List of Arabic words.
+        """
+        if not text:
+            return []
+        # Match sequences of Arabic characters
+        return re.findall(r"[\u0600-\u06FF\u0750-\u077F]+", text)
+
+    @classmethod
+    def analyze_text(cls, text: Optional[str]) -> dict:
+        """
+        Calculate linguistic and structural metrics for Arabic text.
+
+        Args:
+            text: Raw input text.
+
+        Returns:
+            Dict containing detailed text metrics:
+                - total_chars: Total character count
+                - arabic_chars: Count of Arabic characters
+                - arabic_ratio: Proportion of Arabic characters
+                - word_count: Total Arabic word count
+                - unique_words: Count of distinct Arabic words
+                - lexical_diversity: Type-token ratio (0.0 to 1.0)
+                - tatweel_count: Count of Kashida/Tatweel elongation characters
+                - diacritic_count: Count of Tashkeel diacritics
+                - diacritic_ratio: Diacritics per Arabic character
+                - sentence_count: Estimated sentence count
+                - is_primarily_arabic: Boolean flag
+        """
+        if not text:
+            return {
+                "total_chars": 0,
+                "arabic_chars": 0,
+                "arabic_ratio": 0.0,
+                "word_count": 0,
+                "unique_words": 0,
+                "lexical_diversity": 0.0,
+                "tatweel_count": 0,
+                "diacritic_count": 0,
+                "diacritic_ratio": 0.0,
+                "sentence_count": 0,
+                "is_primarily_arabic": False,
+            }
+
+        total_chars = len(text)
+        arabic_chars = sum(
+            1 for c in text if "\u0600" <= c <= "\u06FF" or "\u0750" <= c <= "\u077F"
+        )
+        tatweel_count = text.count(KASHIDA)
+        diacritic_matches = ARABIC_DIACRITICS.findall(text)
+        diacritic_count = sum(len(m) for m in diacritic_matches)
+
+        words = cls.extract_arabic_words(text)
+        word_count = len(words)
+        normalized_words = [normalize_arabic(w) for w in words]
+        unique_words = len(set(normalized_words))
+        lexical_diversity = (
+            round(unique_words / word_count, 4) if word_count > 0 else 0.0
+        )
+
+        # Sentence delimiters for Arabic & Western punctuation
+        sentences = [
+            s.strip()
+            for s in re.split(r"[.!?؟;\n]+", text)
+            if s.strip()
+        ]
+        sentence_count = max(1, len(sentences)) if text.strip() else 0
+
+        arabic_ratio = round(arabic_chars / total_chars, 4) if total_chars else 0.0
+        diacritic_ratio = round(diacritic_count / arabic_chars, 4) if arabic_chars else 0.0
+
+        return {
+            "total_chars": total_chars,
+            "arabic_chars": arabic_chars,
+            "arabic_ratio": arabic_ratio,
+            "word_count": word_count,
+            "unique_words": unique_words,
+            "lexical_diversity": lexical_diversity,
+            "tatweel_count": tatweel_count,
+            "diacritic_count": diacritic_count,
+            "diacritic_ratio": diacritic_ratio,
+            "sentence_count": sentence_count,
+            "is_primarily_arabic": arabic_ratio >= 0.25,
+        }
+
 
 # ============================================================
 # Module-level convenience function
@@ -250,3 +344,16 @@ def normalize_for_embedding(text: Optional[str]) -> str:
         Text normalized for embedding similarity.
     """
     return _default_processor.process_for_embedding(text)
+
+
+def analyze_arabic_text(text: Optional[str]) -> dict:
+    """
+    Convenience function: calculate text statistics and readability metrics.
+
+    Args:
+        text: Raw input text.
+
+    Returns:
+        Dict of linguistic statistics.
+    """
+    return ArabicProcessor.analyze_text(text)
