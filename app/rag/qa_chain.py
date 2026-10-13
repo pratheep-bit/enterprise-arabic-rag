@@ -154,8 +154,9 @@ class QAChain:
 
         # Check in-memory cache
         cache_key = f"{collection_name or 'all'}:{top_k}:{question.strip()}"
-        if self.cache:
-            cached_res = self.cache.get(cache_key)
+        cache_instance = getattr(self, "cache", None)
+        if cache_instance is not None:
+            cached_res = cache_instance.get(cache_key)
             if cached_res is not None:
                 logger.info(f"Returning cached answer for query: '{question.strip()}'")
                 return cached_res
@@ -228,8 +229,8 @@ class QAChain:
                 dialect_detected=dialect_detected,
             )
 
-            if self.cache:
-                self.cache.set(cache_key, answer_obj)
+            if cache_instance is not None:
+                cache_instance.set(cache_key, answer_obj)
 
             return answer_obj
 

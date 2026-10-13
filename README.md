@@ -172,6 +172,13 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 streamlit run frontend/streamlit_app.py
 ```
 
+### Docker Deployment
+Run the full stack (FastAPI backend + Streamlit frontend) using Docker Compose:
+```bash
+docker compose up --build -d
+```
+The API is accessible at `http://localhost:8000` and the web interface at `http://localhost:8501`.
+
 ---
 
 ## API Reference
@@ -203,7 +210,17 @@ curl -X POST http://localhost:8000/upload \
 }
 ```
 
-### 2. Ask Question
+### 2. Delete Document
+`DELETE /documents/{document_id}`
+* **Rate Limit**: 60 requests / minute
+* **Description**: Removes metadata from registry, deletes associated stored PDF on disk, and purges the ChromaDB vector collection.
+
+**cURL Example**:
+```bash
+curl -X DELETE http://localhost:8000/documents/4f9d12a8b9e0
+```
+
+### 3. Ask Question
 `POST /ask`
 * **Content-Type**: `application/json`
 * **Rate Limit**: 30 requests / minute
@@ -235,13 +252,16 @@ curl -X POST http://localhost:8000/upload \
 }
 ```
 
-**Error Response (429 Too Many Requests)**:
-```json
-{
-  "error": "Rate limit exceeded",
-  "detail": "Maximum 30 requests per 1 minute"
-}
-```
+### 4. Batch Question Answering
+`POST /ask/batch`
+* **Content-Type**: `application/json`
+* **Rate Limit**: 30 requests / minute
+* **Description**: Process up to 20 questions in a single request.
+
+### 5. Arabic Text & Readability Analysis
+`POST /analyze`
+* **Content-Type**: `application/json`
+* **Description**: Computes linguistic metrics (word count, diacritic ratio, tatweel count, lexical diversity) and extracts dialect colloquialisms.
 
 ---
 
