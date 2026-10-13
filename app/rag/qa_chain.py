@@ -20,6 +20,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.models.schemas import AnswerResponse, SourceCitation
 from app.prompts.arabic_qa_prompt import SYSTEM_PROMPT, build_user_prompt
 from app.rag.retriever import Retriever
+from app.utils.cache import QueryCache
 
 load_dotenv()
 
@@ -33,6 +34,8 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+ENABLE_QUERY_CACHE = os.getenv("ENABLE_QUERY_CACHE", "true").lower() == "true"
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "3600"))
 
 # Confidence score weights (must sum to 1.0)
 CONFIDENCE_WEIGHT_LLM = float(os.getenv("CONFIDENCE_WEIGHT_LLM", "0.6"))
@@ -70,6 +73,7 @@ class QAChain:
         model_name: Optional[str] = None,
         temperature: Optional[float] = None,
         api_key: Optional[str] = None,
+        cache: Optional[QueryCache] = None,
     ):
         """
         Initialize the QA chain.
@@ -79,10 +83,18 @@ class QAChain:
             model_name: LLM model name (defaults to env var).
             temperature: LLM temperature (defaults to env var).
             api_key: OpenAI API key (defaults to env var).
+            cache: QueryCache instance (or defaults to memory cache if enabled).
         """
         self.retriever = retriever or Retriever()
         self.model_name = model_name or LLM_MODEL
         self.temperature = temperature if temperature is not None else LLM_TEMPERATURE
+
+        if cache is not None:
+            self.cache = cache
+        elif ENABLE_QUERY_CACHE:
+            self.cache = QueryCache(ttl_seconds=CACHE_TTL_SECONDS)
+        else:
+            self.cache = None
 
         # Initialize LLM
         key = api_key or OPENROUTER_API_KEY or OPENAI_API_KEY
@@ -111,7 +123,7 @@ class QAChain:
         )
 
         logger.info(
-            f"QAChain initialized: model={self.model_name}, temp={self.temperature}"
+            f"QAChain initialized: model={self.model_name}, temp={self.temperature}, cache={'enabled' if self.cache else 'disabled'}"
         )
 
     def ask(
@@ -139,6 +151,14 @@ class QAChain:
                 "السؤال فارغ. يرجى إدخال سؤال.",
                 error_code="EMPTY_QUESTION",
             )
+
+        # Check in-memory cache
+        cache_key = f"{collection_name or 'all'}:{top_k}:{question.strip()}"
+        if self.cache:
+            cached_res = self.cache.get(cache_key)
+            if cached_res is not None:
+                logger.info(f"Returning cached answer for query: '{question.strip()}'")
+                return cached_res
 
         try:
             # Step 1: Retrieve relevant chunks
@@ -199,7 +219,7 @@ class QAChain:
             sources = self._build_sources(parsed, chunks)
 
             # Step 8: Build response
-            return AnswerResponse(
+            answer_obj = AnswerResponse(
                 answer=parsed.get("answer", NO_ANSWER_RESPONSE),
                 confidence=final_confidence,
                 sources=sources,
@@ -207,6 +227,11 @@ class QAChain:
                 query_normalized=query_normalized,
                 dialect_detected=dialect_detected,
             )
+
+            if self.cache:
+                self.cache.set(cache_key, answer_obj)
+
+            return answer_obj
 
         except QAChainError:
             raise
@@ -327,4 +352,16 @@ class QAChain:
         return {
             "model": self.model_name,
             "temperature": self.temperature,
+            "cache_enabled": self.cache is not None,
         }
+
+    def clear_cache(self) -> None:
+        """Clear query cache entries."""
+        if self.cache:
+            self.cache.clear()
+
+    def get_cache_stats(self) -> Optional[dict]:
+        """Return query cache hit/miss statistics if enabled."""
+        if self.cache:
+            return self.cache.stats()
+        return None
