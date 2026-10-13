@@ -78,6 +78,22 @@ class DocumentRegistry:
         with self._lock:
             return len(self._documents)
 
+    def delete(self, document_id: str) -> bool:
+        """Delete a document by document_id. Returns True if found and deleted, False otherwise."""
+        document_id = str(document_id).strip()
+        with self._lock:
+            if document_id in self._documents:
+                del self._documents[document_id]
+                self._persist()
+                return True
+            return False
+
+    def clear(self) -> None:
+        """Clear all registered documents."""
+        with self._lock:
+            self._documents.clear()
+            self._persist()
+
     def _persist(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {"documents": self._documents}

@@ -167,6 +167,23 @@ class DocumentListResponse(BaseModel):
     )
 
 
+class DocumentDeleteResponse(BaseModel):
+    """Response model for document deletion."""
+
+    status: str = Field(
+        default="deleted",
+        description="Status of the deletion request.",
+    )
+    document_id: str = Field(
+        ...,
+        description="ID of the deleted document.",
+    )
+    message: str = Field(
+        default="تم حذف المستند بنجاح.",
+        description="Localized status message.",
+    )
+
+
 class HealthResponse(BaseModel):
     """Response model for the health check endpoint."""
 

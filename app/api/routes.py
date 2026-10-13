@@ -23,6 +23,7 @@ from slowapi.util import get_remote_address
 
 from app.models.schemas import (
     AnswerResponse,
+    DocumentDeleteResponse,
     DocumentInfo,
     DocumentListResponse,
     ErrorResponse,
@@ -410,6 +411,76 @@ async def list_documents(
         documents=documents,
         total_count=len(documents),
     )
+
+
+# ============================================================
+# DELETE /documents/{document_id} — Delete an uploaded document
+# ============================================================
+
+@router.delete(
+    "/documents/{document_id}",
+    response_model=DocumentDeleteResponse,
+    summary="Delete an uploaded document",
+    description="Deletes a document from the registry, its ChromaDB collection, and the stored file on disk.",
+    responses={
+        404: {"model": ErrorResponse, "description": "Document not found"},
+        500: {"model": ErrorResponse, "description": "Deletion error"},
+    },
+)
+async def delete_document(
+    document_id: str,
+    registry: DocumentRegistry = Depends(get_document_registry),
+    vector_store: VectorStore = Depends(get_vector_store),
+):
+    """Delete a document by its document ID."""
+    try:
+        doc_info = registry.get(document_id)
+        collection_name = None
+
+        if doc_info:
+            collection_name = doc_info.get("collection_name")
+            file_path = doc_info.get("file_path")
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    logger.info(f"Removed file on disk: {file_path}")
+                except OSError as e:
+                    logger.warning(f"Failed to remove file {file_path}: {e}")
+
+            registry.delete(document_id)
+        elif vector_store.get_collection_info(document_id):
+            collection_name = document_id
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": "DOCUMENT_NOT_FOUND",
+                    "detail": f"المستند غير موجود: {document_id}",
+                    "status_code": 404,
+                },
+            )
+
+        if collection_name:
+            vector_store.delete_collection(collection_name)
+
+        logger.info(f"Successfully deleted document: {document_id}")
+        return DocumentDeleteResponse(
+            status="deleted",
+            document_id=document_id,
+            message="تم حذف المستند بنجاح.",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting document {document_id}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "DELETE_ERROR",
+                "detail": "حدث خطأ أثناء حذف المستند.",
+                "status_code": 500,
+            },
+        )
 
 
 # ============================================================
