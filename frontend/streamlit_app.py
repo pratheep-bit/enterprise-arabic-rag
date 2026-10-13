@@ -4,6 +4,7 @@ Clean rewrite — Supports English (default) and Arabic UI.
 """
 
 import html
+import json
 import os
 import time
 import requests
@@ -56,6 +57,7 @@ T = {
         "sources_label": "Sources",
         "page_str": "p.",
         "view_json": "🔍 View full JSON",
+        "export_qa": "📥 Download JSON Report",
         "footer": "ARABIC Q&A · RAG v1.0 · FastAPI · LangChain · ChromaDB · Streamlit",
         "change_lang": "🌍 التبديل إلى العربية",
         "lang_code": "ar",
@@ -100,6 +102,7 @@ T = {
         "sources_label": "المراجع",
         "page_str": "ص",
         "view_json": "🔍 عرض JSON الكامل",
+        "export_qa": "📥 تحميل تقرير JSON",
         "footer": "ARABIC Q&A · RAG v1.0 · FastAPI · LangChain · ChromaDB · Streamlit",
         "change_lang": "🌍 Change to English",
         "lang_code": "en",
@@ -645,11 +648,20 @@ with st.sidebar:
     _docs = docs_list()
     if _docs:
         for _d in _docs:
-            st.markdown(
-                f'<div class="s-doc">'
-                f'<div class="s-name">PDF: {esc(_d.get("filename",""))}</div>'
-                f'<div class="s-meta">{esc(_d.get("page_count","?"))} {esc(L["pages"])} · {esc(_d.get("chunk_count","?"))} {esc(L["chunks"])}</div>'
-                f'</div>', unsafe_allow_html=True)
+            _col_info, _col_del = st.columns([5, 1])
+            with _col_info:
+                st.markdown(
+                    f'<div class="s-doc">'
+                    f'<div class="s-name">PDF: {esc(_d.get("filename",""))}</div>'
+                    f'<div class="s-meta">{esc(_d.get("page_count","?"))} {esc(L["pages"])} · {esc(_d.get("chunk_count","?"))} {esc(L["chunks"])}</div>'
+                    f'</div>', unsafe_allow_html=True)
+            with _col_del:
+                _doc_id = _d.get("document_id")
+                if _doc_id and st.button("✕", key=f"del_{_doc_id}", help="Delete"):
+                    _del_res = api("delete", f"/documents/{_doc_id}")
+                    if _del_res.get("success"):
+                        st.session_state.docs_cache = None
+                        st.rerun()
     else:
         st.caption(f'<div class="bidi-box">{L["no_docs"]}</div>', unsafe_allow_html=True)
 
@@ -837,6 +849,14 @@ if st.session_state.qa_result is not None:
         # raw JSON
         with st.expander(L["view_json"]):
             st.json(_d)
+
+        st.download_button(
+            label=L["export_qa"],
+            data=json.dumps(_d, ensure_ascii=False, indent=2),
+            file_name=f"arabic_rag_response_{int(time.time())}.json",
+            mime="application/json",
+            use_container_width=True,
+        )
 
 
 # ──────────────────────────────────────────────────────────────
